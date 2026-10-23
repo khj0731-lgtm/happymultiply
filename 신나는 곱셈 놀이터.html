@@ -1,0 +1,2173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>신나는 곱셈 놀이터</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com">
+function celebrateAchievement(){const c=document.createElement('div');c.className='firework-container';document.body.appendChild(c);const centers=[{x:18+Math.random()*20,y:22+Math.random()*25},{x:50+Math.random()*20,y:18+Math.random()*28},{x:72+Math.random()*15,y:30+Math.random()*25}];centers.forEach(o=>{for(let i=0;i<28;i++){const p=document.createElement('span');p.className='firework-particle';const a=Math.PI*2*i/28+(Math.random()-.5)*.18,d=65+Math.random()*100;p.style.left=o.x+'vw';p.style.top=o.y+'vh';p.style.setProperty('--dx',Math.cos(a)*d+'px');p.style.setProperty('--dy',Math.sin(a)*d+'px');p.style.background=`hsl(${Math.floor(Math.random()*360)},90%,60%)`;p.style.animationDelay=Math.random()*180+'ms';c.appendChild(p)}});setTimeout(()=>c.remove(),1300)}
+
+// 곱셈 왕 상장 기능
+function updateCertificateNameLock() {
+    const nameInputs = document.querySelectorAll(
+        '#certificateName, .certificate-name, input[name="certificateName"], input[placeholder*="성명"], input[placeholder*="이름"]'
+    );
+    const stickers = Number(
+        (typeof state !== 'undefined' && (state.stickers ?? state.stickerCount ?? state.stars)) || 0
+    );
+    const unlocked = stickers >= 20;
+
+    nameInputs.forEach(input => {
+        input.disabled = !unlocked;
+        input.classList.toggle('certificate-name-locked', !unlocked);
+        input.classList.toggle('certificate-name-unlocked', unlocked);
+        input.title = unlocked
+            ? '칭찬 스티커 20개를 모아 이름을 입력할 수 있습니다.'
+            : '칭찬 스티커 20개를 모으면 이름을 입력할 수 있습니다.';
+    });
+}
+
+function stampExcellent() {
+    const targets = document.querySelectorAll(
+        '.master-stamp, .multiplication-master-stamp, [class*="master-stamp"]'
+    );
+
+    let stamped = false;
+    targets.forEach(target => {
+        // 기존 도장 문구가 있는 영역 안에 참 잘했어요! 도장을 추가
+        if (!target.querySelector('.excellent-stamp')) {
+            const stamp = document.createElement('div');
+            stamp.className = 'excellent-stamp';
+            stamp.textContent = '참 잘했어요!';
+            target.appendChild(stamp);
+        }
+        stamped = true;
+    });
+
+    // 대상 클래스가 없더라도 텍스트 "곱셈마스터"가 있는 요소를 찾아 도장 처리
+    if (!stamped) {
+        const all = document.querySelectorAll('div, span, p, button, section');
+        all.forEach(el => {
+            if (el.children.length < 5 && el.textContent.trim().includes('곱셈마스터')) {
+                if (!el.querySelector('.excellent-stamp')) {
+                    const stamp = document.createElement('div');
+                    stamp.className = 'excellent-stamp';
+                    stamp.textContent = '참 잘했어요!';
+                    el.appendChild(stamp);
+                }
+            }
+        });
+    }
+}
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    updateCertificateNameLock();
+
+    // '곱셈마스터' 도장 영역을 클릭하면 '참 잘했어요!' 도장을 찍습니다.
+    document.addEventListener('click', (event) => {
+        const el = event.target.closest('div, span, p, button, section');
+        if (!el) return;
+        if (el.textContent.trim().includes('곱셈마스터') && el.children.length < 5) {
+            stampExcellent();
+        }
+    });
+});
+
+// 기존 렌더링 후에도 이름 잠금 상태를 유지
+setTimeout(updateCertificateNameLock, 300);
+setTimeout(updateCertificateNameLock, 1000);
+
+</script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Jua & Noto Sans KR) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            pink: '#FF8EAE',
+                            yellow: '#FFD93D',
+                            green: '#6BCB77',
+                            blue: '#4D96FF',
+                            purple: '#9B51E0',
+                            bg: '#FFFDF0'
+                        }
+                    },
+                    fontFamily: {
+                        jua: ['Jua', 'sans-serif'],
+                        sans: ['Noto Sans KR', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #FFFDF0;
+            user-select: none;
+        }
+        .font-jua {
+            font-family: 'Jua', sans-serif;
+        }
+        .bouncy {
+            transition: transform 0.15s ease-in-out;
+        }
+        .bouncy:active {
+            transform: scale(0.92);
+        }
+        .card-flip {
+            perspective: 1000px;
+        }
+        .card-inner {
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .card-flipped {
+            transform: rotateY(180deg);
+        }
+        .card-front, .card-back {
+            backface-visibility: hidden;
+        }
+        .card-back {
+            transform: rotateY(180deg);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #FFF9D2;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #FFB84C;
+            border-radius: 999px;
+        }
+    
+.firework-container{position:fixed;inset:0;pointer-events:none;z-index:99999;overflow:hidden}.firework-particle{position:absolute;width:8px;height:8px;border-radius:50%;animation:firework-burst .9s ease-out forwards;transform:translate(-50%,-50%)}@keyframes firework-burst{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.25)}}
+
+/* 곱셈구구 정답 폭죽 효과 */
+.firework-container {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 99999;
+    overflow: hidden;
+}
+.firework-particle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: multiplication-firework 900ms ease-out forwards;
+}
+@keyframes multiplication-firework {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.2);
+    }
+}
+
+
+/* 곱셈 왕 상장: 스티커 20개 달성 전 이름 입력 잠금 */
+.certificate-name-locked {
+    background: #f1f1f1 !important;
+    cursor: not-allowed !important;
+    color: #888 !important;
+}
+.certificate-name-unlocked {
+    background: #fff !important;
+    cursor: text !important;
+}
+.master-stamp {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    transition: transform .15s ease;
+}
+.master-stamp:active {
+    transform: scale(.94);
+}
+.excellent-stamp {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 145px;
+    min-height: 65px;
+    padding: 10px 18px;
+    border: 4px solid #e53935;
+    border-radius: 12px;
+    color: #e53935;
+    font-weight: 900;
+    font-size: 24px;
+    transform: rotate(-7deg) scale(.95);
+    animation: stamp-in .25s ease-out forwards;
+    background: rgba(255,255,255,.88);
+}
+@keyframes stamp-in {
+    0% { opacity: 0; transform: rotate(-7deg) scale(1.35); }
+    100% { opacity: 1; transform: rotate(-7deg) scale(1); }
+}
+
+</style>
+</head>
+<body class="min-h-screen flex flex-col text-slate-800">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-yellow-300 via-pink-300 to-indigo-300 shadow-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-2">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('gugudan')">
+                <div class="w-11 h-11 bg-white rounded-full flex items-center justify-center shadow-lg text-2xl text-yellow-500">
+                    <i class="fa-solid fa-star animate-spin-slow"></i>
+                </div>
+                <div>
+                    <h1 class="font-jua text-2xl md:text-3xl text-slate-800 drop-shadow-sm">신나는 곱셈 놀이터</h1>
+                </div>
+            </div>
+
+            <!-- Header Badges & Stars -->
+            <div class="flex items-center space-x-3 bg-white/80 backdrop-blur px-4 py-1.5 rounded-full shadow-inner border border-yellow-200">
+                <div class="flex items-center space-x-1" title="획득한 별">
+                    <span class="text-xl">⭐</span>
+                    <span id="userStars" class="font-jua text-xl text-amber-600">0</span>
+                </div>
+                <div class="h-4 w-px bg-slate-300"></div>
+                <div class="flex items-center space-x-1" title="나의 레벨">
+                    <span class="text-xs font-bold text-slate-500">LV.</span>
+                    <span id="userLevel" class="font-jua text-lg text-indigo-600">1</span>
+                </div>
+                <div class="h-4 w-px bg-slate-300"></div>
+                <button onclick="resetProgress()" class="text-slate-500 hover:text-rose-500 text-sm transition" title="학습 기록 초기화">↺</button>
+                <button id="soundToggleBtn" onclick="toggleSound()" class="text-slate-600 hover:text-indigo-600 text-lg transition" title="소리 켜기/끄기">
+                    <i class="fa-solid fa-volume-high"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="bg-white/60 border-t border-yellow-200/50">
+            <div class="max-w-6xl mx-auto px-2 flex justify-center space-x-1 md:space-x-4 overflow-x-auto py-2">
+                <button id="tab-gugudan" onclick="switchTab('gugudan')" class="tab-btn px-4 py-2 rounded-2xl font-jua text-base md:text-lg flex items-center gap-2 bg-yellow-400 text-slate-900 shadow-sm transition bouncy">
+                    <i class="fa-solid fa-shapes text-pink-600"></i> 곱셈구구
+                </button>
+                <button id="tab-vertical" onclick="switchTab('vertical')" class="tab-btn px-4 py-2 rounded-2xl font-jua text-base md:text-lg flex items-center gap-2 text-slate-600 hover:bg-yellow-100 transition bouncy">
+                    <i class="fa-solid fa-calculator text-blue-500"></i> 세로셈 연습
+                </button>
+                <button id="tab-games" onclick="switchTab('games')" class="tab-btn px-4 py-2 rounded-2xl font-jua text-base md:text-lg flex items-center gap-2 text-slate-600 hover:bg-yellow-100 transition bouncy">
+                    <i class="fa-solid fa-gamepad text-purple-600"></i> 신나는 게임존
+                </button>
+                <button id="tab-rewards" onclick="switchTab('rewards')" class="tab-btn px-4 py-2 rounded-2xl font-jua text-base md:text-lg flex items-center gap-2 text-slate-600 hover:bg-yellow-100 transition bouncy">
+                    <i class="fa-solid fa-award text-amber-500"></i> 칭찬 스티커 & 상장
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-6xl mx-auto px-4 py-6 flex-grow w-full">
+
+        <!-- TAB 1: 2학년 곱셈구구 (3개의 세부 탭으로 구분) -->
+        <section id="section-gugudan" class="space-y-6">
+            
+            <!-- Sub Navigation Bar for Grade 2 -->
+            <div class="bg-white p-2 rounded-3xl shadow-sm border border-amber-200 flex flex-wrap justify-center gap-2">
+                <button id="gugudan-subtab-btn-concept" onclick="switchGugudanSubTab('concept')" class="gugudan-subtab-btn px-5 py-2.5 rounded-2xl font-jua text-base md:text-lg bg-amber-400 text-slate-900 shadow-sm transition bouncy flex items-center gap-2">
+                    💡 1. 곱셈구구 개념 (묶어 세기)
+                </button>
+                <button id="gugudan-subtab-btn-recite" onclick="switchGugudanSubTab('recite')" class="gugudan-subtab-btn px-5 py-2.5 rounded-2xl font-jua text-base md:text-lg text-slate-600 hover:bg-amber-100 transition bouncy flex items-center gap-2">
+                    📢 2. 구구단 듣고 따라하기
+                </button>
+                <button id="gugudan-subtab-btn-practice" onclick="switchGugudanSubTab('practice')" class="gugudan-subtab-btn px-5 py-2.5 rounded-2xl font-jua text-base md:text-lg text-slate-600 hover:bg-amber-100 transition bouncy flex items-center gap-2">
+                    ✍️ 3. 문제 풀이 연습
+                </button>
+            </div>
+
+            <!-- SUB-TAB 1: 곱셈구구 개념 (그림과 함께 보는 묶어세기 및 몇의 몇 배) -->
+            <div id="gugudan-subtab-concept-content" class="space-y-6">
+                <div class="bg-gradient-to-r from-amber-100 via-orange-100 to-yellow-100 p-5 md:p-6 rounded-3xl border-2 border-amber-300 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="space-y-1 text-center md:text-left">
+                        <span class="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase">개념 탐구</span>
+                        <h2 class="font-jua text-2xl md:text-3xl text-amber-900">곱셈은 '같은 수를 여러 번 더하는 것'이에요!</h2>
+                        <p class="text-sm text-amber-800">물건을 똑같이 묶어 세어보면서 곱셈식으로 바꾸는 원리를 배워보아요.</p>
+                    </div>
+                    <button onclick="speakConceptExplanation()" class="bg-amber-500 hover:bg-amber-600 text-white font-jua px-4 py-2.5 rounded-2xl shadow bouncy flex items-center gap-2 shrink-0">
+                        <i class="fa-solid fa-volume-high"></i> 원리 설명 들어보기
+                    </button>
+                </div>
+
+                <!-- Interactive Concept Builder Board -->
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-6">
+                    <!-- Controls for Visualizer -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-amber-50/80 p-4 rounded-2xl border border-amber-200">
+                        <!-- Icon Selector -->
+                        <div>
+                            <label class="block font-jua text-slate-700 text-sm mb-1">1️⃣ 아이콘 모양 선택</label>
+                            <div class="flex gap-2 text-xl">
+                                <button onclick="changeConceptIcon('🍎')" class="concept-icon-btn p-2 bg-white rounded-xl border border-amber-300 shadow-sm hover:scale-110 transition">🍎</button>
+                                <button onclick="changeConceptIcon('🍊')" class="concept-icon-btn p-2 bg-white rounded-xl border border-amber-300 shadow-sm hover:scale-110 transition">🍊</button>
+                                <button onclick="changeConceptIcon('🌸')" class="concept-icon-btn p-2 bg-white rounded-xl border border-amber-300 shadow-sm hover:scale-110 transition">🌸</button>
+                                <button onclick="changeConceptIcon('🍰')" class="concept-icon-btn p-2 bg-white rounded-xl border border-amber-300 shadow-sm hover:scale-110 transition">🍰</button>
+                                <button onclick="changeConceptIcon('🚗')" class="concept-icon-btn p-2 bg-white rounded-xl border border-amber-300 shadow-sm hover:scale-110 transition">🚗</button>
+                            </div>
+                        </div>
+
+                        <!-- Item Count per Group -->
+                        <div>
+                            <label class="block font-jua text-slate-700 text-sm mb-1">2️⃣ 한 묶음에 있는 개수 (<span id="conceptItemPerGroupCountText" class="text-indigo-600">3</span>개씩)</label>
+                            <div class="flex items-center space-x-2">
+                                <button onclick="adjustConceptItems(-1)" class="w-8 h-8 bg-amber-200 hover:bg-amber-300 font-bold rounded-lg">-</button>
+                                <span id="conceptItemVal" class="font-jua text-xl w-8 text-center">3</span>
+                                <button onclick="adjustConceptItems(1)" class="w-8 h-8 bg-amber-200 hover:bg-amber-300 font-bold rounded-lg">+</button>
+                            </div>
+                        </div>
+
+                        <!-- Group Count -->
+                        <div>
+                            <label class="block font-jua text-slate-700 text-sm mb-1">3️⃣ 묶음 수 (<span id="conceptGroupCountText" class="text-indigo-600">4</span>묶음)</label>
+                            <div class="flex items-center space-x-2">
+                                <button onclick="adjustConceptGroups(-1)" class="w-8 h-8 bg-amber-200 hover:bg-amber-300 font-bold rounded-lg">-</button>
+                                <span id="conceptGroupVal" class="font-jua text-xl w-8 text-center">4</span>
+                                <button onclick="adjustConceptGroups(1)" class="w-8 h-8 bg-amber-200 hover:bg-amber-300 font-bold rounded-lg">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Visual Graphics Canvas Area -->
+                    <div class="min-h-[220px] bg-slate-50/80 p-6 rounded-3xl border-2 border-dashed border-amber-300 flex flex-wrap items-center justify-center gap-4" id="conceptVisualDisplay">
+                        <!-- Dynamic items generated via JS -->
+                    </div>
+
+                    <!-- Step-by-Step Mathematical Explanation Card -->
+                    <div class="bg-indigo-50/70 p-5 rounded-2xl border border-indigo-200 space-y-3">
+                        <div class="flex flex-wrap justify-between items-center gap-2">
+                            <h3 class="font-jua text-lg text-indigo-900 flex items-center gap-2">
+                                <i class="fa-solid fa-graduation-cap text-indigo-600"></i> 단계별 생각하기 (먼저 생각한 후 카드를 클릭해 답을 확인하세요!)
+                            </h3>
+                            <button onclick="resetStepReveals()" class="text-xs font-jua bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-3 py-1.5 rounded-xl border border-indigo-200 transition">
+                                🔄 모두 다시 가리기
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-center">
+                            <!-- Step 1 Card -->
+                            <div onclick="revealConceptStep(1)" class="cursor-pointer bg-white p-3.5 rounded-2xl border-2 border-indigo-200 hover:border-indigo-400 hover:shadow-md shadow-sm transition bouncy flex flex-col justify-between min-h-[96px]">
+                                <span class="text-xs font-bold text-indigo-500 block">1단계: 묶어 세기</span>
+                                <div id="conceptStep1Box" class="my-auto py-1">
+                                    <span class="text-xs font-jua text-slate-500 bg-indigo-50 px-2.5 py-1 rounded-lg block border border-indigo-100">❓ 정답 확인</span>
+                                </div>
+                            </div>
+                            <!-- Step 2 Card -->
+                            <div onclick="revealConceptStep(2)" class="cursor-pointer bg-white p-3.5 rounded-2xl border-2 border-indigo-200 hover:border-indigo-400 hover:shadow-md shadow-sm transition bouncy flex flex-col justify-between min-h-[96px]">
+                                <span class="text-xs font-bold text-indigo-500 block">2단계: 몇의 몇 배</span>
+                                <div id="conceptStep2Box" class="my-auto py-1">
+                                    <span class="text-xs font-jua text-slate-500 bg-indigo-50 px-2.5 py-1 rounded-lg block border border-indigo-100">❓ 정답 확인</span>
+                                </div>
+                            </div>
+                            <!-- Step 3 Card -->
+                            <div onclick="revealConceptStep(3)" class="cursor-pointer bg-white p-3.5 rounded-2xl border-2 border-indigo-200 hover:border-indigo-400 hover:shadow-md shadow-sm transition bouncy flex flex-col justify-between min-h-[96px]">
+                                <span class="text-xs font-bold text-indigo-500 block">3단계: 덧셈식</span>
+                                <div id="conceptStep3Box" class="my-auto py-1">
+                                    <span class="text-xs font-jua text-slate-500 bg-indigo-50 px-2.5 py-1 rounded-lg block border border-indigo-100">❓ 정답 확인</span>
+                                </div>
+                            </div>
+                            <!-- Step 4 Card -->
+                            <div onclick="revealConceptStep(4)" class="cursor-pointer bg-amber-50 p-3.5 rounded-2xl border-2 border-amber-300 hover:border-amber-400 hover:shadow-md shadow-sm transition bouncy flex flex-col justify-between min-h-[96px]">
+                                <span class="text-xs font-bold text-amber-800 block">4단계: 곱셈식 완성!</span>
+                                <div id="conceptStep4Box" class="my-auto py-1">
+                                    <span class="text-xs font-jua text-amber-700 bg-amber-100 px-2.5 py-1 rounded-lg block border border-amber-200">❓ 정답 확인</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUB-TAB 2: 구구단 듣고 따라하기 (2단~9단 외우기 & 소리듣기) -->
+            <div id="gugudan-subtab-recite-content" class="hidden space-y-6">
+                <!-- Dan Selector Buttons -->
+                <div class="bg-white p-4 rounded-3xl shadow-sm border border-slate-100">
+                    <h3 class="font-jua text-xl text-slate-700 mb-3 text-center md:text-left">공부할 단을 선택하세요!</h3>
+                    <div class="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                        <button onclick="selectDan(2)" class="dan-btn dan-2 bg-pink-100 hover:bg-pink-200 text-pink-700 font-jua text-xl py-3 rounded-2xl border-2 border-pink-300 shadow-sm transition bouncy">2단</button>
+                        <button onclick="selectDan(3)" class="dan-btn dan-3 bg-orange-100 hover:bg-orange-200 text-orange-700 font-jua text-xl py-3 rounded-2xl border-2 border-orange-300 shadow-sm transition bouncy">3단</button>
+                        <button onclick="selectDan(4)" class="dan-btn dan-4 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 font-jua text-xl py-3 rounded-2xl border-2 border-yellow-300 shadow-sm transition bouncy">4단</button>
+                        <button onclick="selectDan(5)" class="dan-btn dan-5 bg-green-100 hover:bg-green-200 text-green-700 font-jua text-xl py-3 rounded-2xl border-2 border-green-300 shadow-sm transition bouncy">5단</button>
+                        <button onclick="selectDan(6)" class="dan-btn dan-6 bg-teal-100 hover:bg-teal-200 text-teal-700 font-jua text-xl py-3 rounded-2xl border-2 border-teal-300 shadow-sm transition bouncy">6단</button>
+                        <button onclick="selectDan(7)" class="dan-btn dan-7 bg-blue-100 hover:bg-blue-200 text-blue-700 font-jua text-xl py-3 rounded-2xl border-2 border-blue-300 shadow-sm transition bouncy">7단</button>
+                        <button onclick="selectDan(8)" class="dan-btn dan-8 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-jua text-xl py-3 rounded-2xl border-2 border-indigo-300 shadow-sm transition bouncy">8단</button>
+                        <button onclick="selectDan(9)" class="dan-btn dan-9 bg-purple-100 hover:bg-purple-200 text-purple-700 font-jua text-xl py-3 rounded-2xl border-2 border-purple-300 shadow-sm transition bouncy">9단</button>
+                    </div>
+                </div>
+
+                <!-- Recite Board Container -->
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+                    <div class="flex flex-wrap justify-between items-center pb-3 border-b gap-3">
+                        <h3 id="currentDanTitle" class="font-jua text-2xl text-slate-800">🌸 2단 구구단</h3>
+                        <div class="flex items-center gap-2">
+                            <button id="speakFullDanBtn" onclick="speakFullDan()" class="bg-indigo-500 hover:bg-indigo-600 text-white font-jua px-4 py-2 rounded-xl text-sm md:text-base flex items-center gap-2 shadow bouncy">
+                                <i class="fa-solid fa-volume-high"></i> 전체 크게 읽어주기
+                            </button>
+                            <button id="hideAnswerToggleBtn" onclick="toggleHideAnswers()" class="bg-amber-100 hover:bg-amber-200 text-amber-900 font-jua px-4 py-2 rounded-xl text-sm md:text-base flex items-center gap-2 border border-amber-300 transition bouncy">
+                                🙈 답 가리기 (외우기 테스트)
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="danRowsContainer" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <!-- Dynamic Dan Rows -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUB-TAB 3: 문제 풀이 연습 (개념 & 구구단 퀴즈) -->
+            <div id="gugudan-subtab-practice-content" class="hidden space-y-6">
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 max-w-3xl mx-auto space-y-6 text-center">
+                    <div class="flex justify-between items-center bg-amber-50 px-4 py-3 rounded-2xl border border-amber-200 flex-wrap gap-2">
+                        <span class="font-jua text-lg text-amber-900"><i class="fa-solid fa-fire text-orange-500"></i> 연속 정답: <span id="gugudanPracticeStreak" class="text-indigo-600">0</span>회</span>
+                        <span class="font-jua text-lg text-amber-900">⭐ 획득한 별: <span id="gugudanPracticeStars" class="text-amber-600">0</span>개</span>
+                    </div>
+
+                    <!-- Problem Mode Selector Buttons -->
+                    <div class="flex flex-wrap justify-center gap-2">
+                        <button onclick="setPracticeMode('all')" id="pmode-all" class="practice-mode-btn bg-indigo-600 text-white border-2 border-indigo-600 font-jua px-3.5 py-2 rounded-2xl text-sm md:text-base shadow-sm hover:scale-105 transition bouncy">
+                            🎲 전체 혼합
+                        </button>
+                        <button onclick="setPracticeMode('visual')" id="pmode-visual" class="practice-mode-btn bg-white text-slate-700 border-2 border-slate-200 font-jua px-3.5 py-2 rounded-2xl text-sm md:text-base shadow-sm hover:scale-105 transition bouncy">
+                            🖼️ 그림보고 곱셈하기
+                        </button>
+                        <button onclick="setPracticeMode('missing')" id="pmode-missing" class="practice-mode-btn bg-white text-slate-700 border-2 border-slate-200 font-jua px-3.5 py-2 rounded-2xl text-sm md:text-base shadow-sm hover:scale-105 transition bouncy">
+                            ❓ 빈칸 채우기
+                        </button>
+                        <button onclick="setPracticeMode('basic')" id="pmode-basic" class="practice-mode-btn bg-white text-slate-700 border-2 border-slate-200 font-jua px-3.5 py-2 rounded-2xl text-sm md:text-base shadow-sm hover:scale-105 transition bouncy">
+                            🧮 기본 곱셈 계산하기
+                        </button>
+                    </div>
+
+                    <!-- Dynamic Practice Question Area -->
+                    <div id="gugudanPracticeCard" class="bg-gradient-to-b from-indigo-50/50 to-amber-50/50 p-8 rounded-3xl border-2 border-indigo-200 space-y-6">
+                        <!-- Question content generated by JS -->
+                    </div>
+
+                    <div class="flex justify-center gap-3">
+                        <button onclick="generateGugudanPracticeQuestion()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-jua text-lg px-6 py-2.5 rounded-2xl border border-slate-300 transition">
+                            다음 문제 ➡️
+                        </button>
+                    </div>
+                    <div id="gugudanPracticeFeedback" class="font-jua text-2xl min-h-[36px]"></div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- TAB 2: 세로셈 연습 -->
+        <section id="section-vertical" class="hidden space-y-6">
+            <!-- Intro Banner -->
+            <div class="bg-gradient-to-r from-blue-100 to-indigo-100 p-4 md:p-6 rounded-3xl border-2 border-blue-300 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="space-y-1 text-center md:text-left">
+                    <span class="bg-blue-500 text-white text-xs font-bold px-2.5 py-1 rounded-full uppercase">필수 과정</span>
+                    <h2 class="font-jua text-2xl md:text-3xl text-blue-900">두 자리 · 세 자리 수 곱셈 (세로셈)</h2>
+                    <p class="text-sm text-blue-800">받아올림 위치를 눈으로 보면서 단계별로 쉽게 풀어보아요! <b>두 자리 × 두 자리</b>를 먼저 연습한 뒤 <b>세 자리 × 두 자리</b>에 도전해요.</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="generateVerticalProblem()" class="bg-blue-600 hover:bg-blue-700 text-white font-jua px-4 py-2.5 rounded-2xl shadow bouncy flex items-center gap-2">
+                        <i class="fa-solid fa-arrows-rotate"></i> 새 문제 만들기
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mode Selection Tabs for Grade 3 -->
+            <div class="flex flex-wrap justify-center gap-2">
+                <button onclick="setVerticalMode('2x1_no_carry')" id="vmode-2x1_no_carry" class="vmode-btn bg-white border-2 border-blue-400 text-blue-700 font-jua px-4 py-2 rounded-2xl shadow-sm hover:bg-blue-50 transition">
+                    (두 자리) × (한 자리) [받아올림 없음]
+                </button>
+                <button onclick="setVerticalMode('2x1_carry')" id="vmode-2x1_carry" class="vmode-btn bg-white border-2 border-slate-200 text-slate-600 font-jua px-4 py-2 rounded-2xl shadow-sm hover:bg-blue-50 transition">
+                    (두 자리) × (한 자리) [받아올림 있음]
+                </button>
+                <button onclick="setVerticalMode('3x1_no_carry')" id="vmode-3x1_no_carry" class="vmode-btn bg-white border-2 border-slate-200 text-slate-600 font-jua px-4 py-2 rounded-2xl shadow-sm hover:bg-blue-50 transition">
+                    (세 자리) × (한 자리) [받아올림 없음]
+                </button>
+                <button onclick="setVerticalMode('3x1_carry')" id="vmode-3x1_carry" class="vmode-btn bg-white border-2 border-slate-200 text-slate-600 font-jua px-4 py-2 rounded-2xl shadow-sm hover:bg-blue-50 transition">
+                    (세 자리) × (한 자리) [받아올림 있음]
+                </button>
+                <button onclick="setVerticalMode('2x2')" id="vmode-2x2" class="vmode-btn bg-white border-2 border-slate-200 text-slate-600 font-jua px-4 py-2 rounded-2xl shadow-sm hover:bg-blue-50 transition">
+                    (두 자리) × (두 자리) ⭐
+                </button>
+                <button onclick="setVerticalMode('3x2')" id="vmode-3x2" class="vmode-btn bg-white border-2 border-slate-200 text-slate-600 font-jua px-4 py-2 rounded-2xl shadow-sm hover:bg-blue-50 transition">
+                    (세 자리) × (두 자리) ⭐⭐
+                </button>
+            </div>
+
+            <!-- Main Vertical Practice Board -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                <!-- Interactive Vertical Calculator Canvas -->
+                <div class="md:col-span-7 bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center justify-center min-h-[380px]">
+                    <div id="verticalBoard" class="font-jua text-3xl md:text-4xl text-slate-800 space-y-3 relative inline-block">
+                        <!-- Dynamic vertical structure generated via JS -->
+                    </div>
+
+                    <div class="mt-8 flex gap-4 w-full justify-center">
+                        <button onclick="checkVerticalAnswer()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-jua text-xl px-8 py-3 rounded-2xl shadow-lg bouncy flex items-center gap-2">
+                            <i class="fa-solid fa-check"></i> 정답 확인하기
+                        </button>
+                        <button onclick="showHint()" class="bg-amber-400 hover:bg-amber-500 text-amber-950 font-jua text-xl px-5 py-3 rounded-2xl shadow bouncy">
+                            💡 힌트
+                        </button>
+                    </div>
+                    <div id="verticalFeedback" class="mt-4 font-jua text-xl min-h-[30px] text-center"></div>
+                </div>
+
+                <!-- Explanation & Step-by-Step Guide -->
+                <div class="md:col-span-5 bg-indigo-50/70 p-5 rounded-3xl border border-indigo-100 flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-jua text-xl text-indigo-900 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-graduation-cap text-indigo-600"></i> 단계별 풀이 도우미
+                        </h3>
+                        <div id="stepGuideBox" class="space-y-3 text-slate-700 text-sm md:text-base leading-relaxed">
+                            <!-- 선택한 세로셈 유형에 맞는 예시가 표시됩니다. -->
+                        </div>
+
+                    <!-- Scratchpad / Note area -->
+                    <div class="mt-4 pt-4 border-t border-indigo-200">
+                        <div class="flex flex-wrap justify-between items-center mb-2 gap-2">
+                            <label class="font-jua text-indigo-900 text-sm flex items-center gap-1">
+                                ✏️ 연습장 (펜/손글씨 자유 메모)
+                            </label>
+                            <div class="flex items-center gap-1.5">
+                                <button onclick="setScratchTool('pen', '#1e293b', this)" class="scratch-color-btn active w-7 h-7 rounded-full bg-slate-800 border-2 border-indigo-500 shadow-sm" title="검은색 펜"></button>
+                                <button onclick="setScratchTool('pen', '#2563eb', this)" class="scratch-color-btn w-7 h-7 rounded-full bg-blue-600 border-2 border-transparent shadow-sm" title="파란색 펜"></button>
+                                <button onclick="setScratchTool('pen', '#dc2626', this)" class="scratch-color-btn w-7 h-7 rounded-full bg-red-600 border-2 border-transparent shadow-sm" title="빨간색 펜"></button>
+                                <button id="scratchEraserBtn" onclick="setScratchTool('eraser', null, this)" class="px-2.5 py-1 text-xs font-jua bg-indigo-100 text-indigo-800 rounded-xl hover:bg-indigo-200 transition" title="지우개">🧽 지우개</button>
+                                <button onclick="clearScratchCanvas()" class="px-2.5 py-1 text-xs font-jua bg-rose-100 text-rose-700 rounded-xl hover:bg-rose-200 transition" title="전체 지우기">🗑️ 모두 지우기</button>
+                            </div>
+                        </div>
+                        <div class="w-full h-44 bg-white rounded-2xl border-2 border-indigo-200 relative overflow-hidden shadow-inner cursor-crosshair">
+                            <canvas id="scratchCanvas" class="w-full h-full touch-none block"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: 신나는 게임존 -->
+        <section id="section-games" class="hidden space-y-6">
+            <!-- Game Menu Banner -->
+            <div class="bg-gradient-to-r from-purple-100 to-pink-100 p-4 md:p-6 rounded-3xl border-2 border-purple-300 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="space-y-1 text-center md:text-left">
+                    <span class="bg-purple-600 text-white text-xs font-bold px-2.5 py-1 rounded-full uppercase">곱셈 게임 천국</span>
+                    <h2 class="font-jua text-2xl md:text-3xl text-purple-900">게임으로 즐겁게 곱셈 실력을 쑥쑥!</h2>
+                    <p class="text-sm text-purple-800">원하는 미니게임을 선택하여 최고 기록에 도전하세요.</p>
+                </div>
+            </div>
+
+            <!-- Mini Game Selector Tabs -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button onclick="startMiniGame('matching')" class="bg-white hover:bg-pink-50 p-5 rounded-3xl border-2 border-pink-200 shadow-sm text-left transition bouncy flex items-center space-x-4">
+                    <div class="w-14 h-14 bg-pink-100 text-pink-600 rounded-2xl flex items-center justify-center text-2xl shrink-0">
+                        <i class="fa-solid fa-clone"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-jua text-xl text-slate-800">구구단 카드 짝맞추기</h3>
+                        <p class="text-xs text-slate-500">곱셈식과 정답 카드를 찾아 맞추는 기억력 게임!</p>
+                    </div>
+                </button>
+
+                <button onclick="startMiniGame('speed')" class="bg-white hover:bg-yellow-50 p-5 rounded-3xl border-2 border-yellow-200 shadow-sm text-left transition bouncy flex items-center space-x-4">
+                    <div class="w-14 h-14 bg-yellow-100 text-yellow-600 rounded-2xl flex items-center justify-center text-2xl shrink-0">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-jua text-xl text-slate-800">스피드 타임어택</h3>
+                        <p class="text-xs text-slate-500">60초 동안 얼마나 많은 곱셈 문제를 맞힐 수 있을까요?</p>
+                    </div>
+                </button>
+
+                <button onclick="startMiniGame('missing')" class="bg-white hover:bg-indigo-50 p-5 rounded-3xl border-2 border-indigo-200 shadow-sm text-left transition bouncy flex items-center space-x-4">
+                    <div class="w-14 h-14 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center text-2xl shrink-0">
+                        <i class="fa-solid fa-square-question"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-jua text-xl text-slate-800">빈칸 수리탐정</h3>
+                        <p class="text-xs text-slate-500">? 에 들어갈 숫자를 맞혀 곱셈식을 완성하세요.</p>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Active Game Arena Container -->
+            <div id="gameArena" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 min-h-[400px] flex flex-col justify-center items-center">
+                <!-- Game Content Dynamically Loaded -->
+            </div>
+        </section>
+
+        <!-- TAB 4: 칭찬 스티커 & 상장 -->
+        <section id="section-rewards" class="hidden space-y-6">
+            <!-- Intro Banner -->
+            <div class="bg-gradient-to-r from-amber-100 via-yellow-100 to-amber-200 p-4 md:p-6 rounded-3xl border-2 border-amber-300 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="space-y-1 text-center md:text-left">
+                    <span class="bg-amber-600 text-white text-xs font-bold px-2.5 py-1 rounded-full uppercase">나의 명예의 전당</span>
+                    <h2 class="font-jua text-2xl md:text-3xl text-amber-900">칭찬 스티커판 & 곱셈 왕 상장</h2>
+                    <p class="text-sm text-amber-800">문제를 풀고 모은 별로 스티커를 채우고 멋진 상장을 만들어 보세요!</p>
+                </div>
+</div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Sticker Board -->
+                <div class="lg:col-span-6 bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+                    <div class="flex justify-between items-center pb-2 border-b">
+                        <h3 class="font-jua text-xl text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-star text-amber-400"></i> 참 잘했어요 스티커판 (총 20개)
+                        </h3>
+                        <span id="stickerCount" class="font-jua text-lg text-indigo-600">0 / 20</span>
+                    </div>
+
+                    <div id="stickerGrid" class="grid grid-cols-5 gap-3 pt-2">
+                        <!-- 20 Sticker slots generated via JS -->
+                    </div>
+                    <p class="text-xs text-slate-500 text-center">⭐ 문제를 풀거나 게임에서 높은 점수를 얻으면 스티커가 붙습니다!</p>
+                </div>
+
+                <!-- Printable Certificate Preview -->
+                <div class="lg:col-span-6">
+                    <div id="certificateArea" class="bg-amber-50/90 p-8 rounded-3xl border-8 border-double border-amber-400 shadow-md text-center space-y-4 relative overflow-hidden">
+                        <!-- Corner Decorations -->
+                        <div class="absolute top-2 left-2 text-amber-400 text-2xl"><i class="fa-solid fa-crown"></i></div>
+                        <div class="absolute top-2 right-2 text-amber-400 text-2xl"><i class="fa-solid fa-crown"></i></div>
+
+                        <span class="font-jua text-sm text-amber-700 tracking-widest uppercase">Certificate of Excellence</span>
+                        <h3 class="font-jua text-3xl md:text-4xl text-amber-950 font-bold tracking-wider">칭 찬 상 장</h3>
+
+                        <div class="my-4">
+                            <p class="text-xs text-slate-500">성명</p>
+                            <input type="text" id="studentNameInput" value="멋진 어린이" class="font-jua text-2xl text-center text-indigo-700 bg-transparent border-b-2 border-amber-300 focus:outline-none focus:border-indigo-500 px-2 py-1 w-48">
+                        </div>
+
+                        <p class="text-sm md:text-base text-slate-700 leading-relaxed font-semibold px-4">
+                            위 어린이는 <strong class="text-amber-800">신나는 곱셈 놀이터</strong>에서 
+                            곱셈구구와 세로셈 과정을 열정적으로 공부하여 뛰어난 곱셈 실력을 거두었으므로 이 상장을 수여합니다.
+                        </p>
+
+                        <div class="pt-4 flex justify-around items-center">
+                            <div class="text-left text-xs text-slate-500 space-y-1">
+                                <p>수여일: <span id="certDate">2026년 9월 21일</span></p>
+                                <p>발행처: 초등 곱셈 놀이터</p>
+                            </div>
+                            <div class="w-16 h-16 bg-amber-400/20 rounded-full border-2 border-dashed border-amber-500 flex items-center justify-center text-amber-600 font-jua text-xs rotate-12 shadow-inner">
+                                곱셈마스터
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal for Multiplication Concept Visualizer -->
+    <div id="conceptModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl border-4 border-amber-300">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-jua text-2xl text-amber-900 flex items-center gap-2">
+                    <i class="fa-solid fa-lightbulb text-yellow-500"></i> 곱셈이란 무엇일까요?
+                </h3>
+                <button onclick="closeConceptModal()" class="text-slate-400 hover:text-slate-600 text-2xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4 text-slate-700 text-base leading-relaxed">
+                <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200">
+                    <h4 class="font-jua text-lg text-amber-900 mb-1">1. 똑같이 묶어 세기</h4>
+                    <p class="text-sm">사과가 한 바구니에 3개씩 들어있을 때, 바구니가 4개 있다면?</p>
+                    <div class="text-center text-2xl my-2">
+                        🧺(🍎🍎🍎) + 🧺(🍎🍎🍎) + 🧺(🍎🍎🍎) + 🧺(🍎🍎🍎)
+                    </div>
+                    <p class="text-sm font-semibold text-indigo-700 text-center">
+                        3 + 3 + 3 + 3 = 12개 ➡️ 3씩 4번 = 3의 4배 = 3 × 4 = 12
+                    </p>
+                </div>
+
+                <div class="bg-blue-50 p-4 rounded-2xl border border-blue-200">
+                    <h4 class="font-jua text-lg text-blue-900 mb-1">2. 곱셈 기호 (×) 의 의미</h4>
+                    <p class="text-sm">앞의 숫자(3)는 **'한 묶음에 있는 개수'**, 뒤의 숫자(4)는 **'묶음의 수'**를 나타내요!</p>
+                </div>
+            </div>
+
+            <div class="text-right pt-2">
+                <button onclick="closeConceptModal()" class="bg-amber-500 hover:bg-amber-600 text-white font-jua text-lg px-6 py-2 rounded-2xl shadow bouncy">알겠어요!</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* Global Application State */
+        const state = {
+            stars: 0,
+            level: 1,
+            soundEnabled: true,
+            currentDan: 2,
+            quickAnswer: 0,
+            verticalMode: '2x1_no_carry', // 2x1_no_carry, 2x1_carry, 3x1_no_carry, 3x1_carry, 2x2(먼저), 3x2(다음)
+            verticalProblem: null,
+            currentGame: null,
+            gameScore: 0,
+            gameTimer: null,
+            timeLeft: 60,
+            stickers: 0,
+            // Grade 2 Concept State
+            conceptIcon: '🍎',
+            conceptItemPerGroup: 3,
+            conceptGroupCount: 4,
+            conceptRevealedSteps: { 1: false, 2: false, 3: false, 4: false },
+            stepData: {},
+            // Grade 2 Recite State
+            answersHidden: false,
+            // Grade 2 Practice Quiz State
+            practiceStreak: 0,
+            practiceCurrentAnswer: null,
+            practiceCurrentType: 'basic',
+            practiceSelectedMode: 'all',
+            wrongAnswers: [],
+            totalQuestions: 0,
+            correctQuestions: 0,
+            hintUsed: false
+        };
+
+        // Web Audio API Sound Generator for friendly sound effects
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (!state.soundEnabled) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'correct') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                    osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now); // A3
+                    osc.frequency.setValueAtTime(196, now + 0.15); // G3
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'star') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(880, now); // A5
+                    osc.frequency.setValueAtTime(1174.66, now + 0.08); // D6
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                }
+            } catch(e) {
+                console.log(e);
+            }
+        }
+
+        function toggleSound() {
+            state.soundEnabled = !state.soundEnabled;
+            const btn = document.getElementById('soundToggleBtn');
+            if (state.soundEnabled) {
+                btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+                btn.classList.remove('text-slate-400');
+                btn.classList.add('text-slate-600');
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+                btn.classList.add('text-slate-400');
+            }
+        }
+
+        function getDanSpeech(dan) {
+            const danNames = {2:'이단',3:'삼단',4:'사단',5:'오단',6:'육단',7:'칠단',8:'팔단',9:'구단'};
+            return danNames[dan] || `${dan}단`;
+        }
+
+        function speakText(text) {
+            if (!state.soundEnabled || !('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ko-KR';
+            utterance.rate = 0.9;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        /* Navigation Switching */
+        function switchTab(tabName) {
+            const tabs = ['gugudan', 'vertical', 'games', 'rewards'];
+            tabs.forEach(t => {
+                document.getElementById(`section-${t}`).classList.add('hidden');
+                const btn = document.getElementById(`tab-${t}`);
+                btn.classList.remove('bg-yellow-400', 'text-slate-900');
+                btn.classList.add('text-slate-600');
+            });
+
+            document.getElementById(`section-${tabName}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-${tabName}`);
+            activeBtn.classList.add('bg-yellow-400', 'text-slate-900');
+            activeBtn.classList.remove('text-slate-600');
+
+            if (tabName === 'vertical') {
+                setTimeout(() => {
+                    initScratchCanvas();
+                    resizeScratchCanvas();
+                }, 50);
+            }
+
+            if (tabName === 'games' && !state.currentGame) {
+                startMiniGame('matching');
+            }
+        }
+
+        /* Grade 2 Sub-Tab Switching Logic */
+        function switchGugudanSubTab(subTabName) {
+            const subTabs = ['concept', 'recite', 'practice'];
+            subTabs.forEach(st => {
+                document.getElementById(`gugudan-subtab-${st}-content`).classList.add('hidden');
+                const btn = document.getElementById(`gugudan-subtab-btn-${st}`);
+                btn.classList.remove('bg-amber-400', 'text-slate-900');
+                btn.classList.add('text-slate-600');
+            });
+
+            document.getElementById(`gugudan-subtab-${subTabName}-content`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`gugudan-subtab-btn-${subTabName}`);
+            activeBtn.classList.add('bg-amber-400', 'text-slate-900');
+            activeBtn.classList.remove('text-slate-600');
+
+            if (subTabName === 'concept') {
+                updateConceptVisualizer();
+            } else if (subTabName === 'recite') {
+                selectDan(state.currentDan);
+            } else if (subTabName === 'practice') {
+                generateGugudanPracticeQuestion();
+            }
+        }
+
+        /* Grade 2 Sub-Tab 1: Concept Visualizer Functions */
+        function changeConceptIcon(icon) {
+            state.conceptIcon = icon;
+            updateConceptVisualizer();
+        }
+
+        function adjustConceptItems(delta) {
+            const newVal = state.conceptItemPerGroup + delta;
+            if (newVal >= 1 && newVal <= 9) {
+                state.conceptItemPerGroup = newVal;
+                updateConceptVisualizer();
+            }
+        }
+
+        function adjustConceptGroups(delta) {
+            const newVal = state.conceptGroupCount + delta;
+            if (newVal >= 1 && newVal <= 9) {
+                state.conceptGroupCount = newVal;
+                updateConceptVisualizer();
+            }
+        }
+
+        function updateConceptVisualizer() {
+            const item = state.conceptItemPerGroup;
+            const group = state.conceptGroupCount;
+            const result = item * group;
+
+            document.getElementById('conceptItemVal').innerText = item;
+            document.getElementById('conceptGroupVal').innerText = group;
+            document.getElementById('conceptItemPerGroupCountText').innerText = item;
+            document.getElementById('conceptGroupCountText').innerText = group;
+
+            // Render Graphic Boxes
+            const display = document.getElementById('conceptVisualDisplay');
+            display.innerHTML = '';
+
+            for (let g = 0; g < group; g++) {
+                const groupCard = document.createElement('div');
+                groupCard.className = 'bg-white p-4 rounded-2xl border-2 border-amber-300 shadow-sm flex flex-col items-center space-y-2 animate-fade-in';
+                
+                let iconsHtml = '<div class="grid grid-cols-3 gap-1.5 text-2xl md:text-3xl">';
+                for (let i = 0; i < item; i++) {
+                    iconsHtml += `<span>${state.conceptIcon}</span>`;
+                }
+                iconsHtml += '</div>';
+
+                groupCard.innerHTML = `
+                    ${iconsHtml}
+                    <span class="text-xs font-bold text-amber-800 bg-amber-100 px-2.5 py-1 rounded-full">${g + 1}번째 묶음 (${item}개)</span>
+                `;
+                display.appendChild(groupCard);
+            }
+
+            // Update step calculation answers
+            state.stepData = {
+                1: `${item}개씩 ${group}묶음`,
+                2: `${item}의 ${group}배`,
+                3: Array(group).fill(item).join(' + '),
+                4: `${item} × ${group} = ${result}`
+            };
+
+            // Reset reveals when numbers or icons change so students can think again
+            resetStepReveals();
+        }
+
+        function renderConceptSteps() {
+            for (let s = 1; s <= 4; s++) {
+                const box = document.getElementById(`conceptStep${s}Box`);
+                if (!box) continue;
+                if (state.conceptRevealedSteps[s]) {
+                    const textClass = s === 4 ? 'font-jua text-xl text-indigo-700 font-bold' : 'font-jua text-lg text-slate-800';
+                    box.innerHTML = `<span class="${textClass} animate-fade-in block">${state.stepData[s]}</span>`;
+                } else {
+                    const badgeClass = s === 4 ? 'text-xs font-jua text-amber-700 bg-amber-100 px-2.5 py-1 rounded-lg block border border-amber-200' : 'text-xs font-jua text-slate-500 bg-indigo-50 px-2.5 py-1 rounded-lg block border border-indigo-100';
+                    box.innerHTML = `<span class="${badgeClass}">❓ 정답 확인</span>`;
+                }
+            }
+        }
+
+        function revealConceptStep(stepNum) {
+            // Toggle step state
+            state.conceptRevealedSteps[stepNum] = !state.conceptRevealedSteps[stepNum];
+            if (state.conceptRevealedSteps[stepNum]) {
+                playSound('star');
+            }
+            renderConceptSteps();
+        }
+
+        function resetStepReveals() {
+            state.conceptRevealedSteps = { 1: false, 2: false, 3: false, 4: false };
+            renderConceptSteps();
+        }
+
+        function speakConceptExplanation() {
+            const item = state.conceptItemPerGroup;
+            const group = state.conceptGroupCount;
+            const result = item * group;
+            const text = `${item}개씩 ${group}묶음은 ${item}의 ${group}배와 같고, 덧셈식으로 ${Array(group).fill(item).join(' 더하기 ')}은 ${result}입니다. 이것을 곱셈식으로 쓰면 ${item} 곱하기 ${group}은 ${result}입니다.`;
+            speakText(text);
+        }
+
+        /* Grade 2 Sub-Tab 2: Recite Functions */
+        const danEmojiMap = {
+            2: '🍒', 3: '🍓', 4: '🍎', 5: '🍊', 
+            6: '🍇', 7: '⭐', 8: '🎈', 9: '🧸'
+        };
+
+        function selectDan(dan) {
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
+            updateFullDanSpeakButton(false);
+            state.currentDan = dan;
+            
+            // Highlight active Dan button
+            for (let i = 2; i <= 9; i++) {
+                const btn = document.querySelector(`.dan-${i}`);
+                if (i === dan) {
+                    btn.classList.add('ring-4', 'ring-amber-400', 'scale-105');
+                } else {
+                    btn.classList.remove('ring-4', 'ring-amber-400', 'scale-105');
+                }
+            }
+
+            document.getElementById('currentDanTitle').innerHTML = `${danEmojiMap[dan]} ${dan}단 구구단`;
+            renderDanRows(dan);
+        }
+
+        function renderDanRows(dan) {
+            const container = document.getElementById('danRowsContainer');
+            container.innerHTML = '';
+
+            for (let i = 1; i <= 9; i++) {
+                const result = dan * i;
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between p-3 rounded-2xl bg-slate-50 hover:bg-amber-100/60 border border-slate-200/60 transition cursor-pointer';
+                row.onclick = () => {
+                    speakText(`${numberToKoreanSpeech(dan)} 곱하기 ${numberToKoreanSpeech(i)}은 ${numberToKoreanSpeech(result)}`);
+                };
+
+                const displayResult = state.answersHidden ? '❓' : result;
+
+                row.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <span class="w-8 h-8 bg-amber-200 text-amber-900 rounded-full flex items-center justify-center font-jua text-base">${i}</span>
+                        <span class="font-jua text-2xl text-slate-800">${dan} × ${i} = <strong class="text-indigo-600">${displayResult}</strong></span>
+                    </div>
+                    <button class="text-slate-400 hover:text-indigo-600 text-lg">
+                        <i class="fa-solid fa-volume-high"></i>
+                    </button>
+                `;
+                container.appendChild(row);
+            }
+        }
+
+        function toggleHideAnswers() {
+            state.answersHidden = !state.answersHidden;
+            const btn = document.getElementById('hideAnswerToggleBtn');
+            if (state.answersHidden) {
+                btn.innerHTML = '👀 답 보여주기';
+                btn.classList.replace('bg-amber-100', 'bg-indigo-100');
+            } else {
+                btn.innerHTML = '🙈 답 가리기 (외우기 테스트)';
+                btn.classList.replace('bg-indigo-100', 'bg-amber-100');
+            }
+            renderDanRows(state.currentDan);
+        }
+
+        function numberToKoreanSpeech(num) {
+            const ones = ['영','일','이','삼','사','오','육','칠','팔','구'];
+            if (num < 10) return ones[num];
+            if (num < 20) return '십' + (num === 10 ? '' : ones[num - 10]);
+            const tens = Math.floor(num / 10);
+            const onesDigit = num % 10;
+            return ones[tens] + '십' + (onesDigit ? ones[onesDigit] : '');
+        }
+
+        function updateFullDanSpeakButton(isSpeaking) {
+            const btn = document.getElementById('speakFullDanBtn');
+            if (!btn) return;
+            if (isSpeaking) {
+                btn.innerHTML = '<i class="fa-solid fa-stop"></i> 읽기 멈추기';
+                btn.classList.remove('bg-indigo-500', 'hover:bg-indigo-600');
+                btn.classList.add('bg-rose-500', 'hover:bg-rose-600');
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-volume-high"></i> 전체 크게 읽어주기';
+                btn.classList.remove('bg-rose-500', 'hover:bg-rose-600');
+                btn.classList.add('bg-indigo-500', 'hover:bg-indigo-600');
+            }
+        }
+
+        function speakFullDan() {
+            if (!state.soundEnabled || !('speechSynthesis' in window)) return;
+
+            // 읽는 중 다시 누르면 즉시 멈춤
+            if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.cancel();
+                updateFullDanSpeakButton(false);
+                return;
+            }
+
+            let text = '';
+            for (let i = 1; i <= 9; i++) {
+                text += `${numberToKoreanSpeech(state.currentDan)} 곱하기 ${numberToKoreanSpeech(i)}은 ${numberToKoreanSpeech(state.currentDan * i)}. `;
+            }
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ko-KR';
+            utterance.rate = 0.9;
+            utterance.onend = () => updateFullDanSpeakButton(false);
+            utterance.onerror = () => updateFullDanSpeakButton(false);
+
+            updateFullDanSpeakButton(true);
+            window.speechSynthesis.speak(utterance);
+        }
+
+        /* Grade 2 Sub-Tab 3: Practice Quiz Functions */
+        function setPracticeMode(mode) {
+            state.practiceSelectedMode = mode;
+            const buttons = document.querySelectorAll('.practice-mode-btn');
+            buttons.forEach(b => {
+                b.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-600');
+                b.classList.add('bg-white', 'text-slate-700', 'border-slate-200');
+            });
+            const activeBtn = document.getElementById(`pmode-${mode}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-white', 'text-slate-700', 'border-slate-200');
+                activeBtn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600');
+            }
+            generateGugudanPracticeQuestion();
+        }
+
+        function generateGugudanPracticeQuestion() {
+            const card = document.getElementById('gugudanPracticeCard');
+            document.getElementById('gugudanPracticeFeedback').innerText = '';
+            
+            let chosenType = state.practiceSelectedMode;
+            if (chosenType === 'all') {
+                const types = ['visual', 'basic', 'missing'];
+                chosenType = types[Math.floor(Math.random() * types.length)];
+            }
+            state.practiceCurrentType = chosenType;
+
+            // 2단~9단이 한쪽 단에 치우치지 않도록 8개 단을 한 번씩 사용한 뒤 다시 섞음
+            if (!Array.isArray(state.practiceDanBag) || state.practiceDanBag.length === 0) {
+                state.practiceDanBag = [2, 3, 4, 5, 6, 7, 8, 9]
+                    .sort(() => Math.random() - 0.5);
+            }
+            const a = state.practiceDanBag.pop();
+            const b = randomInt(1, 9);
+            const ans = a * b;
+            state.practiceCurrentAnswer = ans;
+
+            if (chosenType === 'visual') {
+                const icon = ['🍎', '🍊', '⭐', '🎈', '🍇'][Math.floor(Math.random() * 5)];
+                let iconsHtml = '<div class="flex flex-wrap justify-center gap-3 my-3">';
+                for (let g = 0; g < b; g++) {
+                    iconsHtml += `<div class="bg-white p-3 rounded-2xl border-2 border-amber-300 shadow-sm text-2xl">${Array(a).fill(icon).join('')}</div>`;
+                }
+                iconsHtml += '</div>';
+
+                card.innerHTML = `
+                    <span class="bg-amber-400 text-amber-950 font-bold px-3 py-1 rounded-full text-xs">그림 보고 곱셈하기</span>
+                    <p class="font-jua text-xl text-slate-700">${a}개씩 ${b}묶음이 있습니다. 총 몇 개일까요?</p>
+                    ${iconsHtml}
+                    <div class="flex items-center justify-center gap-3">
+                        <span class="font-jua text-2xl text-slate-800">${a} × ${b} = </span>
+                        <input type="number" id="practiceQuizInput" class="font-jua text-2xl w-28 px-3 py-2 rounded-2xl border-2 border-indigo-400 text-center focus:outline-none focus:ring-4 focus:ring-indigo-200" placeholder="정답">
+                        <button onclick="checkGugudanPracticeAnswer()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-jua text-xl px-6 py-2 rounded-2xl shadow bouncy">확인</button>
+                    </div>
+                `;
+            } else if (chosenType === 'basic') {
+                card.innerHTML = `
+                    <span class="bg-indigo-500 text-white font-bold px-3 py-1 rounded-full text-xs">기본 구구단 문제</span>
+                    <h3 class="font-jua text-4xl text-indigo-900 my-4">${a} × ${b} = ?</h3>
+                    <div class="flex items-center justify-center gap-3">
+                        <input type="number" id="practiceQuizInput" class="font-jua text-2xl w-32 px-3 py-2 rounded-2xl border-2 border-indigo-400 text-center focus:outline-none focus:ring-4 focus:ring-indigo-200" placeholder="정답">
+                        <button onclick="checkGugudanPracticeAnswer()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-jua text-xl px-6 py-2 rounded-2xl shadow bouncy">확인</button>
+                    </div>
+                `;
+            } else if (chosenType === 'missing') {
+                state.practiceCurrentAnswer = b;
+                card.innerHTML = `
+                    <span class="bg-purple-500 text-white font-bold px-3 py-1 rounded-full text-xs">빈칸 채우기</span>
+                    <h3 class="font-jua text-3xl text-purple-900 my-4">${a} × <span class="bg-amber-200 px-3 py-1 rounded-xl text-amber-950">?</span> = ${ans}</h3>
+                    <p class="text-xs text-slate-500 mb-2">? 위치에 들어갈 알맞은 숫자는 무엇일까요?</p>
+                    <div class="flex items-center justify-center gap-3">
+                        <input type="number" id="practiceQuizInput" class="font-jua text-2xl w-32 px-3 py-2 rounded-2xl border-2 border-purple-400 text-center focus:outline-none focus:ring-4 focus:ring-purple-200" placeholder="숫자">
+                        <button onclick="checkGugudanPracticeAnswer()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-jua text-xl px-6 py-2 rounded-2xl shadow bouncy">확인</button>
+                    </div>
+                `;
+            }
+
+            const inputEl = document.getElementById('practiceQuizInput');
+            if (inputEl) {
+                inputEl.focus();
+                inputEl.addEventListener('keyup', (e) => {
+                    if (e.key === 'Enter') checkGugudanPracticeAnswer();
+                });
+            }
+        }
+
+        function checkGugudanPracticeAnswer() {
+            const inputVal = parseInt(document.getElementById('practiceQuizInput').value);
+            const feedback = document.getElementById('gugudanPracticeFeedback');
+
+            state.totalQuestions++;
+            if (inputVal === state.practiceCurrentAnswer) {
+                feedback.className = 'font-jua text-2xl text-emerald-600 animate-bounce';
+                feedback.innerText = state.hintUsed ? '🎉 힌트를 보고도 끝까지 ' : '🎉 대단해요! 정답입니다!';
+                playSound('correct');
+                state.correctQuestions++;
+                state.practiceStreak++;
+                state.hintUsed = false;
+                saveProgress();
+                addStars(3);
+                document.getElementById('gugudanPracticeStreak').innerText = state.practiceStreak;
+                document.getElementById('gugudanPracticeStars').innerText = state.stars;
+                confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
+                setTimeout(() => {
+                    generateGugudanPracticeQuestion();
+                }, 1200);
+            } else {
+                feedback.className = 'font-jua text-xl text-amber-700 bg-amber-50 p-3 rounded-2xl';
+                feedback.innerText = `💡 다시 생각해 볼까요? 힌트를 눌러 보세요. (${state.practiceCurrentAnswer}가 정답이에요.)`;
+                playSound('wrong');
+                state.wrongAnswers.push({ type: state.practiceCurrentType, answer: state.practiceCurrentAnswer, time: Date.now() });
+                state.wrongAnswers = state.wrongAnswers.slice(-30);
+                state.practiceStreak = 0;
+                saveProgress();
+                document.getElementById('gugudanPracticeStreak').innerText = 0;
+            }
+        }
+
+        function setVerticalMode(mode) {
+            state.verticalMode = mode;
+            const buttons = document.querySelectorAll('.vmode-btn');
+            buttons.forEach(b => {
+                b.classList.remove('bg-blue-400', 'text-white', 'border-blue-400');
+                b.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+            });
+            const activeBtn = document.getElementById(`vmode-${mode}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+                activeBtn.classList.add('bg-blue-500', 'text-white', 'border-blue-500');
+            }
+            generateVerticalProblem();
+        }
+
+        function renderVerticalStepGuide() {
+            const box = document.getElementById('stepGuideBox');
+            if (!box) return;
+
+            /*
+             * 사진의 풀이 방식처럼
+             * ① 일의 자리와 곱한 부분 → 주황색
+             * ② 십의 자리와 곱한 부분 → 파란색
+             * ③ 두 부분을 더한 최종 답
+             *
+             * 한 자리 곱셈은 일의 자리 부분만 표시하고,
+             * 두 자리 곱셈은 일의 자리/십의 자리 부분을
+             * 각각 다른 색으로 표시합니다.
+             */
+            const examples = {
+                '2x1_no_carry': {
+                    title: '두 자리 × 한 자리 · 받아올림 없음',
+                    top: '23',
+                    multiplier: '<span class="text-orange-500">2</span>',
+                    ones: '46',
+                    tens: null,
+                    result: '46',
+                    note: '일의 자리 <span class="text-orange-600 font-bold">2</span>와 곱한 결과를 적어요.'
+                },
+
+                '2x1_carry': {
+                    title: '두 자리 × 한 자리 · 받아올림 있음',
+                    top: '23',
+                    multiplier: '<span class="text-orange-500">4</span>',
+                    ones: '92',
+                    tens: null,
+                    result: '92',
+                    note: '일의 자리 <span class="text-orange-600 font-bold">4</span>와 곱한 결과를 적어요. 받아올림도 함께 생각해요.'
+                },
+
+                '3x1_no_carry': {
+                    title: '세 자리 × 한 자리 · 받아올림 없음',
+                    top: '123',
+                    multiplier: '<span class="text-orange-500">3</span>',
+                    ones: '369',
+                    tens: null,
+                    result: '369',
+                    note: '일의 자리부터 차례대로 계산해요. 10보다 큰 수가 나오지 않아 받아올림이 없어요.'
+                },
+
+                '3x1_carry': {
+                    title: '세 자리 × 한 자리 · 받아올림 있음',
+                    top: '123',
+                    multiplier: '<span class="text-orange-500">4</span>',
+                    ones: '492',
+                    tens: null,
+                    result: '492',
+                    note: '일의 자리부터 차례대로 계산해요. 받아올림이 한 번 또는 여러 번 있는 문제예요.'
+                },
+
+                '2x2': {
+                    title: '두 자리 × 두 자리',
+                    top: '23',
+                    multiplier: '<span class="text-blue-600">1</span><span class="text-orange-500">5</span>',
+                    ones: '115',
+                    tens: '230',
+                    result: '345',
+                    note: '일의 자리 <span class="text-orange-600 font-bold">5</span>와 곱한 값은 주황색, 십의 자리 <span class="text-blue-700 font-bold">1</span>과 곱한 값은 파란색으로 나타내요.'
+                },
+
+                '3x2': {
+                    title: '세 자리 × 두 자리',
+                    top: '123',
+                    multiplier: '<span class="text-blue-600">1</span><span class="text-orange-500">5</span>',
+                    ones: '615',
+                    tens: '1230',
+                    result: '1845',
+                    note: '일의 자리 <span class="text-orange-600 font-bold">5</span>와 곱한 값은 주황색, 십의 자리 <span class="text-blue-700 font-bold">1</span>과 곱한 값은 파란색으로 나타내고 두 수를 더해요.'
+                }
+            };
+
+            const ex = examples[state.verticalMode] || examples['2x1_no_carry'];
+
+            const partialRows = ex.tens
+                ? `
+                    <div class="mt-3 space-y-2">
+                        <div class="flex items-center justify-center gap-3">
+                            <span class="text-xs md:text-sm bg-orange-50 text-orange-700 border border-orange-200 rounded-lg px-2 py-1 whitespace-nowrap">
+                                일의 자리와 곱하기
+                            </span>
+                            <span class="font-jua text-2xl md:text-3xl text-orange-500">${ex.ones}</span>
+                        </div>
+                        <div class="flex items-center justify-center gap-3">
+                            <span class="text-xs md:text-sm bg-blue-50 text-blue-700 border border-blue-200 rounded-lg px-2 py-1 whitespace-nowrap">
+                                십의 자리와 곱하기
+                            </span>
+                            <span class="font-jua text-2xl md:text-3xl text-blue-600">${ex.tens}</span>
+                        </div>
+                    </div>
+
+                    <div class="border-t-2 border-slate-500 mt-3 pt-2">
+                        <div class="text-right font-jua text-3xl md:text-4xl text-slate-800 tracking-[0.12em]">
+                            ${ex.result}
+                        </div>
+                    </div>
+                `
+                : `
+                    <div class="mt-3 flex items-center justify-center gap-3">
+                        <span class="text-xs md:text-sm bg-orange-50 text-orange-700 border border-orange-200 rounded-lg px-2 py-1 whitespace-nowrap">
+                            일의 자리와 곱하기
+                        </span>
+                        <span class="font-jua text-2xl md:text-3xl text-orange-500">${ex.ones}</span>
+                    </div>
+
+                    <div class="border-t-2 border-slate-500 mt-3 pt-2">
+                        <div class="text-right font-jua text-3xl md:text-4xl text-slate-800 tracking-[0.12em]">
+                            ${ex.result}
+                        </div>
+                    </div>
+                `;
+
+            box.innerHTML = `
+                <div class="bg-white p-4 rounded-2xl border border-indigo-100 shadow-sm">
+                    <p class="font-jua text-indigo-900 mb-3">📘 이 문제는 이렇게 풀어요</p>
+
+                    <div class="bg-slate-50 rounded-2xl border border-slate-200 p-4">
+                        <p class="font-bold text-slate-700 mb-3 text-center">${ex.title}</p>
+
+                        <div class="flex justify-center">
+                            <div class="font-jua text-3xl md:text-4xl text-right leading-tight min-w-[150px]">
+                                <div class="tracking-[0.12em] text-slate-800">${ex.top}</div>
+                                <div class="flex justify-end items-center gap-3 mt-1">
+                                    <span class="text-2xl md:text-3xl text-slate-700">×</span>
+                                    <span class="tracking-[0.12em]">${ex.multiplier}</span>
+                                </div>
+                                <div class="border-t-2 border-slate-600 mt-2 pt-1"></div>
+                            </div>
+                        </div>
+
+                        ${partialRows}
+                    </div>
+
+                    <div class="mt-3 grid grid-cols-2 gap-2 text-xs md:text-sm">
+                        <div class="bg-blue-50 border border-blue-200 rounded-xl p-2 text-center">
+                            <span class="font-bold text-blue-700">파란색</span><br>
+                            십의 자리와 곱한 값
+                        </div>
+                        <div class="bg-orange-50 border border-orange-200 rounded-xl p-2 text-center">
+                            <span class="font-bold text-orange-600">주황색</span><br>
+                            일의 자리와 곱한 값
+                        </div>
+                    </div>
+
+                    <p class="mt-3 bg-indigo-50 p-3 rounded-xl border border-indigo-100 text-center text-sm">
+                        💡 ${ex.note}
+                    </p>
+                </div>
+            `;
+        }
+
+        // 세 자리 × 한 자리 계산에서 실제로 발생하는 받아올림 횟수를 계산합니다.
+        function countVerticalCarries(num1, num2) {
+            let n = num1;
+            let carry = 0;
+            let carryCount = 0;
+
+            while (n > 0) {
+                const digit = n % 10;
+                const product = digit * num2 + carry;
+                carry = Math.floor(product / 10);
+                if (carry > 0) carryCount++;
+                n = Math.floor(n / 10);
+            }
+
+            return carryCount;
+        }
+
+        function generateVerticalProblem() {
+            let num1, num2;
+            if (state.verticalMode === '2x1_no_carry') {
+                // 일의 자리 × 한 자리 수가 10 미만이 되도록 생성 → 받아올림 없음
+                do {
+                    num1 = randomInt(12, 98);
+                    num2 = randomInt(2, 9);
+                } while ((num1 % 10) * num2 >= 10);
+            } else if (state.verticalMode === '2x1_carry') {
+                // 일의 자리 × 한 자리 수가 10 이상이 되도록 생성 → 실제 받아올림 보장
+                do {
+                    num1 = Math.floor(Math.random() * 80) + 15;
+                    num2 = Math.floor(Math.random() * 8) + 2;
+                } while ((num1 % 10) * num2 < 10);
+            } else if (state.verticalMode === '3x1_no_carry') {
+                // 세 자리 × 한 자리: 받아올림이 한 번도 일어나지 않도록 생성
+                do {
+                    num1 = randomInt(100, 999);
+                    num2 = randomInt(2, 9);
+                } while (countVerticalCarries(num1, num2) !== 0);
+            } else if (state.verticalMode === '3x1_carry') {
+                // 세 자리 × 한 자리: 받아올림이 한 번 이상 일어나도록 생성
+                do {
+                    num1 = randomInt(100, 999);
+                    num2 = randomInt(2, 9);
+                } while (countVerticalCarries(num1, num2) < 1);
+            } else if (state.verticalMode === '2x2') {
+                num1 = Math.floor(Math.random() * 80) + 12;
+                num2 = Math.floor(Math.random() * 80) + 12;
+            } else if (state.verticalMode === '3x2') {
+                // 세 자리 × 두 자리
+                num1 = randomInt(100, 999);
+                num2 = randomInt(10, 99);
+            }
+
+            state.verticalProblem = { num1, num2, answer: num1 * num2 };
+            renderVerticalBoard();
+            renderVerticalStepGuide();
+            document.getElementById('verticalFeedback').innerText = '';
+        }
+
+        function renderVerticalBoard() {
+            const board = document.getElementById('verticalBoard');
+            const { num1, num2, answer } = state.verticalProblem;
+            const str1 = num1.toString();
+            const str2 = num2.toString();
+            const ansStr = answer.toString();
+            const numDigits = ansStr.length;
+
+            const placeNames = ['일', '십', '백', '천', '만'];
+
+            // Build carry boxes row
+            let carryBoxesHtml = '<div class="flex justify-end gap-2 mb-2 text-xs text-slate-400 font-jua">';
+            for (let i = numDigits - 1; i >= 0; i--) {
+                const placeName = placeNames[i] || '';
+                carryBoxesHtml += `
+                    <div class="flex flex-col items-center">
+                        <span class="text-[10px] text-indigo-400 font-bold">${placeName}의자리</span>
+                        <input type="number" id="carry_${i}" class="w-10 h-8 text-center text-xs font-bold border-2 border-dashed border-indigo-300 rounded-lg bg-indigo-50/50 focus:outline-none focus:border-indigo-500" placeholder="0">
+                    </div>
+                `;
+            }
+            carryBoxesHtml += '</div>';
+
+            // Build vertical problem numbers
+            let problemHtml = `
+                <div class="tracking-[0.4em] text-right pr-2 font-mono font-bold text-3xl md:text-4xl text-slate-800">
+                    ${str1}
+                </div>
+                <div class="tracking-[0.4em] text-right pr-2 font-mono font-bold text-3xl md:text-4xl text-slate-800 border-b-4 border-slate-800 pb-2 flex items-center justify-between">
+                    <span class="text-2xl md:text-3xl text-blue-600 font-sans font-bold ml-2">×</span>
+                    <span>${str2}</span>
+                </div>
+            `;
+
+            // Build answer digit input boxes for each place value
+            let answerDigitsHtml = '<div class="flex justify-end gap-2 pt-3">';
+            for (let i = numDigits - 1; i >= 0; i--) {
+                const placeName = placeNames[i] || '';
+                answerDigitsHtml += `
+                    <div class="flex flex-col items-center">
+                        <span class="text-xs font-jua text-indigo-900 font-bold mb-1">${placeName}의 자리</span>
+                        <input type="text" 
+                               inputmode="numeric" 
+                               maxlength="1" 
+                               data-place="${i}"
+                               id="vDigit_${i}" 
+                               class="v-digit-input w-12 h-14 text-center font-mono font-bold text-2xl text-indigo-700 bg-yellow-50 border-2 border-yellow-400 rounded-2xl focus:outline-none focus:ring-4 focus:ring-yellow-300 focus:bg-white transition" 
+                               placeholder="?">
+                    </div>
+                `;
+            }
+            answerDigitsHtml += '</div>';
+
+            board.innerHTML = carryBoxesHtml + problemHtml + answerDigitsHtml;
+
+            // Add auto-focus behavior right-to-left
+            const digitInputs = Array.from(document.querySelectorAll('.v-digit-input'));
+            digitInputs.forEach((input, idx) => {
+                input.addEventListener('input', (e) => {
+                    const val = e.target.value.replace(/[^0-9]/g, '');
+                    e.target.value = val ? val.slice(-1) : '';
+                    if (e.target.value && idx > 0) {
+                        // Move focus to the previous element in array (higher place value)
+                        digitInputs[idx - 1].focus();
+                    }
+                });
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && !input.value && idx < digitInputs.length - 1) {
+                        digitInputs[idx + 1].focus();
+                    } else if (e.key === 'Enter') {
+                        checkVerticalAnswer();
+                    }
+                });
+            });
+
+            // Focus ones digit input initially
+            const onesInput = document.getElementById('vDigit_0');
+            if (onesInput) setTimeout(() => onesInput.focus(), 100);
+        }
+
+        function checkVerticalAnswer() {
+            const { answer } = state.verticalProblem;
+            const ansStr = answer.toString();
+            const numDigits = ansStr.length;
+            const feedback = document.getElementById('verticalFeedback');
+
+            let enteredStr = '';
+            for (let i = numDigits - 1; i >= 0; i--) {
+                const inputEl = document.getElementById(`vDigit_${i}`);
+                enteredStr += (inputEl && inputEl.value !== '') ? inputEl.value : '';
+            }
+
+            if (enteredStr.length < numDigits) {
+                feedback.className = 'mt-4 font-jua text-xl text-amber-600';
+                feedback.innerText = '⚠️ 각 자릿수(일의 자리, 십의 자리 등)에 숫자를 모두 입력해 주세요!';
+                return;
+            }
+
+            const input = parseInt(enteredStr, 10);
+
+            state.totalQuestions++;
+            if (input === answer) {
+                state.correctQuestions++;
+                saveProgress();
+                feedback.className = 'mt-4 font-jua text-2xl text-emerald-600 animate-bounce';
+                feedback.innerText = '🎉 대단해요! 각 자릿수 곱셈을 완벽하게 맞혔습니다!';
+                playSound('correct');
+                addStars(5);
+                confetti({ particleCount: 50, spread: 70, origin: { y: 0.7 } });
+            } else {
+                state.wrongAnswers.push({ type: 'vertical', answer, time: Date.now() });
+                state.wrongAnswers = state.wrongAnswers.slice(-30);
+                saveProgress();
+                feedback.className = 'mt-4 font-jua text-xl text-amber-700 bg-amber-50 p-3 rounded-2xl';
+                feedback.innerText = `💡 다시 생각해 볼까요? 힌트를 눌러 보세요.`;
+                playSound('wrong');
+            }
+        }
+
+        function showHint() {
+            const { num1, num2, answer } = state.verticalProblem;
+            const feedback = document.getElementById('verticalFeedback');
+            feedback.className = 'mt-4 font-jua text-lg text-amber-700 bg-amber-50 p-3 rounded-2xl border border-amber-200';
+            
+            if (num2 < 10) {
+                const onesPart = (num1 % 10) * num2;
+                const tensPart = Math.floor(num1 / 10) * 10 * num2;
+                feedback.innerText = `💡 힌트: ${num1 % 10} × ${num2} = ${onesPart}, 그리고 ${Math.floor(num1 / 10) * 10} × ${num2} = ${tensPart} 를 더해보세요!`;
+            } else {
+                feedback.innerText = `💡 힌트: ${num1} × ${num2 % 10} 의 값과 ${num1} × ${Math.floor(num2 / 10) * 10} 의 값을 더해보세요!`;
+            }
+        }
+
+        function startMiniGame(type) {
+            state.currentGame = type;
+            const arena = document.getElementById('gameArena');
+            if (state.gameTimer) clearInterval(state.gameTimer);
+
+            if (type === 'matching') {
+                initMatchingGame(arena);
+            } else if (type === 'speed') {
+                initSpeedGame(arena);
+            } else if (type === 'missing') {
+                initMissingGame(arena);
+            }
+        }
+
+        /* Game 1: Card Matching */
+        let matchingFlipped = [];
+        let matchingMatched = 0;
+
+        function initMatchingGame(arena) {
+            const pairs = [];
+            // Generate 3 random multiplication facts (3 pairs = 6 cards)
+            while (pairs.length < 3) {
+                const a = Math.floor(Math.random() * 8) + 2;
+                const b = Math.floor(Math.random() * 8) + 2;
+                if (!pairs.some(p => p.a === a && p.b === b)) {
+                    pairs.push({ a, b, res: a * b });
+                }
+            }
+
+            const cards = [];
+            pairs.forEach((p, idx) => {
+                cards.push({ id: idx, text: `${p.a} × ${p.b}`, matchKey: idx });
+                cards.push({ id: idx, text: `${p.res}`, matchKey: idx });
+            });
+
+            // Shuffle
+            cards.sort(() => Math.random() - 0.5);
+
+            matchingFlipped = [];
+            matchingMatched = 0;
+
+            let gridHtml = `
+                <div class="w-full max-w-2xl text-center space-y-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="font-jua text-2xl text-pink-700">🃏 구구단 카드 짝맞추기</h3>
+                        <span id="matchingScore" class="font-jua text-lg text-slate-600">맞춘 짝: 0 / 3</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+            `;
+
+            cards.forEach((c, index) => {
+                gridHtml += `
+                    <div onclick="flipCard(${index}, ${c.matchKey})" id="card-${index}" class="card-flip h-24 cursor-pointer bouncy">
+                        <div class="card-inner w-full h-full relative rounded-2xl shadow-md border-2 border-pink-300">
+                            <div class="card-front absolute inset-0 bg-gradient-to-br from-pink-400 to-rose-400 rounded-2xl flex items-center justify-center text-white text-3xl font-jua">
+                                ❓
+                            </div>
+                            <div class="card-back absolute inset-0 bg-white rounded-2xl flex items-center justify-center text-slate-800 font-jua text-2xl border-2 border-pink-400">
+                                ${c.text}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            gridHtml += `</div></div>`;
+            arena.innerHTML = gridHtml;
+        }
+
+        function flipCard(index, matchKey) {
+            const cardEl = document.getElementById(`card-${index}`);
+            if (!cardEl || cardEl.classList.contains('disabled') || matchingFlipped.some(f => f.index === index)) return;
+
+            cardEl.querySelector('.card-inner').classList.add('card-flipped');
+            matchingFlipped.push({ index, matchKey, el: cardEl });
+
+            if (matchingFlipped.length === 2) {
+                const [first, second] = matchingFlipped;
+                if (first.matchKey === second.matchKey && first.index !== second.index) {
+                    // Match!
+                    playSound('correct');
+                    first.el.classList.add('disabled', 'opacity-60');
+                    second.el.classList.add('disabled', 'opacity-60');
+                    matchingMatched++;
+                    document.getElementById('matchingScore').innerText = `맞춘 짝: ${matchingMatched} / 3`;
+                    matchingFlipped = [];
+
+                    if (matchingMatched === 3) {
+                        setTimeout(() => {
+                            playSound('star');
+                            addStars(10);
+                            confetti({ particleCount: 80, spread: 80 });
+                            alertModal('🎉 카드 짝맞추기 성공!', '모든 구구단 카드를 맞히셨습니다! 별 10개 획득!');
+                        }, 500);
+                    }
+                } else {
+                    // Miss
+                    playSound('wrong');
+                    setTimeout(() => {
+                        first.el.querySelector('.card-inner').classList.remove('card-flipped');
+                        second.el.querySelector('.card-inner').classList.remove('card-flipped');
+                        matchingFlipped = [];
+                    }, 900);
+                }
+            }
+        }
+
+        /* Game 2: Speed Timeattack */
+        function initSpeedGame(arena) {
+            state.gameScore = 0;
+            state.timeLeft = 60;
+
+            arena.innerHTML = `
+                <div class="w-full max-w-lg text-center space-y-6">
+                    <div class="flex justify-between items-center bg-yellow-50 p-4 rounded-2xl border border-yellow-200">
+                        <div class="text-left">
+                            <span class="text-xs text-yellow-800 font-bold block">남은 시간</span>
+                            <span id="speedTimer" class="font-jua text-3xl text-yellow-900">60초</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs text-yellow-800 font-bold block">현재 점수</span>
+                            <span id="speedScore" class="font-jua text-3xl text-indigo-600">0점</span>
+                        </div>
+                    </div>
+
+                    <div id="speedQuestionArea" class="bg-indigo-50/60 p-8 rounded-3xl border-2 border-indigo-200 space-y-4">
+                        <h3 id="speedQuestion" class="font-jua text-4xl text-slate-800">3 × 7 = ?</h3>
+                        <div class="flex justify-center gap-3">
+                            <input type="number" id="speedAnswerInput" placeholder="정답" class="font-jua text-2xl w-36 px-4 py-2 text-center rounded-2xl border-2 border-indigo-300 focus:outline-none focus:border-indigo-500">
+                            <button onclick="checkSpeedAnswer()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-jua text-xl px-6 py-2 rounded-2xl shadow bouncy">입력</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const inputEl = document.getElementById('speedAnswerInput');
+            if (inputEl) inputEl.disabled = true;
+
+            const answerButton = document.querySelector('#speedQuestionArea button');
+            if (answerButton) answerButton.disabled = true;
+
+            const startButton = document.createElement('button');
+            startButton.id = 'speedStartButton';
+            startButton.className = 'bg-yellow-400 hover:bg-yellow-500 text-slate-800 font-jua text-2xl px-10 py-4 rounded-2xl shadow bouncy';
+            startButton.innerText = '▶️ 게임 시작';
+            document.getElementById('speedQuestionArea').appendChild(startButton);
+
+            startButton.addEventListener('click', () => {
+                startButton.remove();
+                state.timeLeft = 60;
+                state.gameScore = 0;
+
+                const input = document.getElementById('speedAnswerInput');
+                const button = document.querySelector('#speedQuestionArea button');
+                if (input) input.disabled = false;
+                if (button) button.disabled = false;
+
+                nextSpeedQuestion();
+                if (input) input.focus();
+
+                state.gameTimer = setInterval(() => {
+                    state.timeLeft--;
+                    const timerEl = document.getElementById('speedTimer');
+                    if (timerEl) timerEl.innerText = `${state.timeLeft}초`;
+
+                    if (state.timeLeft <= 0) {
+                        clearInterval(state.gameTimer);
+                        state.gameTimer = null;
+                        if (input) input.disabled = true;
+                        const answerBtn = document.querySelector('#speedQuestionArea button');
+                        if (answerBtn) answerBtn.disabled = true;
+                        playSound('star');
+                        const earnedStars = Math.floor(state.gameScore / 10);
+                        addStars(earnedStars);
+                        alertModal('⏱️ 시간 종료!', `최종 점수: ${state.gameScore}점!\n별 ${earnedStars}개를 받았습니다!`);
+                    }
+                }, 1000);
+            });
+
+            document.getElementById('speedAnswerInput').addEventListener('keyup', (e) => {
+                if (e.key === 'Enter' && state.gameTimer) checkSpeedAnswer();
+            });
+        }
+
+        let currentSpeedAns = 0;
+
+        function nextSpeedQuestion() {
+            const a = Math.floor(Math.random() * 8) + 2;
+            const b = Math.floor(Math.random() * 8) + 2;
+            currentSpeedAns = a * b;
+            const qEl = document.getElementById('speedQuestion');
+            if (qEl) qEl.innerText = `${a} × ${b} = ?`;
+            const inputEl = document.getElementById('speedAnswerInput');
+            if (inputEl) {
+                inputEl.value = '';
+                inputEl.focus();
+            }
+        }
+
+        function checkSpeedAnswer() {
+            const input = parseInt(document.getElementById('speedAnswerInput').value);
+            if (input === currentSpeedAns) {
+                playSound('correct');
+                state.gameScore += 10;
+                document.getElementById('speedScore').innerText = `${state.gameScore}점`;
+                nextSpeedQuestion();
+            } else {
+                playSound('wrong');
+                nextSpeedQuestion();
+            }
+        }
+
+        /* Game 3: Missing Number */
+        function initMissingGame(arena) {
+            arena.innerHTML = `
+                <div class="w-full max-w-lg text-center space-y-6">
+                    <h3 class="font-jua text-2xl text-indigo-800">🔍 빈칸 수리탐정</h3>
+                    <div class="bg-indigo-50 p-8 rounded-3xl border-2 border-indigo-200 space-y-4">
+                        <div id="missingFormula" class="font-jua text-3xl md:text-4xl text-slate-800 flex items-center justify-center gap-2">
+                            <!-- Dynamic missing formula -->
+                        </div>
+                        <p class="text-xs text-slate-500">? 위치에 들어갈 알맞은 숫자를 선택하세요!</p>
+                        <div id="missingOptions" class="grid grid-cols-2 gap-3 pt-2">
+                            <!-- Options -->
+                        </div>
+                    </div>
+                </div>
+            `;
+            nextMissingQuestion();
+        }
+
+        function nextMissingQuestion() {
+            const a = Math.floor(Math.random() * 8) + 2;
+            const b = Math.floor(Math.random() * 8) + 2;
+            const res = a * b;
+
+            const formulaEl = document.getElementById('missingFormula');
+            const optionsEl = document.getElementById('missingOptions');
+
+            const isAMissing = Math.random() < 0.5;
+            const correctVal = isAMissing ? a : b;
+
+            if (isAMissing) {
+                formulaEl.innerHTML = `<span class="bg-yellow-200 px-3 py-1 rounded-xl text-yellow-900 shadow-inner">?</span> × ${b} = ${res}`;
+            } else {
+                formulaEl.innerHTML = `${a} × <span class="bg-yellow-200 px-3 py-1 rounded-xl text-yellow-900 shadow-inner">?</span> = ${res}`;
+            }
+
+            // Generate options
+            const options = new Set([correctVal]);
+            while (options.size < 4) {
+                options.add(Math.floor(Math.random() * 8) + 2);
+            }
+
+            const shuffled = Array.from(options).sort(() => Math.random() - 0.5);
+
+            optionsEl.innerHTML = '';
+            shuffled.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'bg-white hover:bg-indigo-100 text-indigo-900 font-jua text-2xl py-3 rounded-2xl border-2 border-indigo-200 shadow-sm transition bouncy';
+                btn.innerText = opt;
+                btn.onclick = () => {
+                    if (opt === correctVal) {
+                        playSound('correct');
+                        addStars(3);
+                        confetti({ particleCount: 30, spread: 50 });
+                        nextMissingQuestion();
+                    } else {
+                        playSound('wrong');
+                        btn.classList.add('bg-rose-100', 'border-rose-300');
+                    }
+                };
+                optionsEl.appendChild(btn);
+            });
+        }
+
+        /* 학습 수준·저장·힌트 */
+        function randomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function getPracticeRange() {
+            const lv = state.level;
+            if (lv <= 1) return [2, 3];
+            if (lv === 2) return [2, 4];
+            if (lv === 3) return [2, 5];
+            if (lv === 4) return [2, 6];
+            if (lv === 5) return [2, 7];
+            if (lv === 6) return [2, 8];
+            return [2, 9];
+        }
+
+        function saveProgress() {
+            const data = {
+                stars: state.stars,
+                level: state.level,
+                stickers: state.stickers,
+                soundEnabled: state.soundEnabled,
+                totalQuestions: state.totalQuestions,
+                correctQuestions: state.correctQuestions,
+                wrongAnswers: state.wrongAnswers
+            };
+            localStorage.setItem('multiplicationPlaygroundProgress', JSON.stringify(data));
+        }
+
+        function loadProgress() {
+            try {
+                const raw = localStorage.getItem('multiplicationPlaygroundProgress');
+                if (!raw) return;
+                const data = JSON.parse(raw);
+                state.stars = Number(data.stars) || 0;
+                state.level = Number(data.level) || (Math.floor(state.stars / 20) + 1);
+                state.stickers = Number(data.stickers) || Math.min(20, Math.floor(state.stars / 5));
+    if (typeof updateCertificateNameLock === 'function') updateCertificateNameLock();
+                state.totalQuestions = Number(data.totalQuestions) || 0;
+                state.correctQuestions = Number(data.correctQuestions) || 0;
+                state.wrongAnswers = Array.isArray(data.wrongAnswers) ? data.wrongAnswers : [];
+                if (typeof data.soundEnabled === 'boolean') state.soundEnabled = data.soundEnabled;
+            } catch (e) {
+                console.warn('학습 기록을 불러오지 못했습니다.', e);
+            }
+        }
+
+        function updateProgressUI() {
+            const starsEl = document.getElementById('userStars');
+            const levelEl = document.getElementById('userLevel');
+            if (starsEl) starsEl.innerText = state.stars;
+            if (levelEl) levelEl.innerText = state.level;
+            const practiceStars = document.getElementById('gugudanPracticeStars');
+            if (practiceStars) practiceStars.innerText = state.stars;
+            const practiceStreak = document.getElementById('gugudanPracticeStreak');
+            if (practiceStreak) practiceStreak.innerText = state.practiceStreak;
+            const soundBtn = document.getElementById('soundToggleBtn');
+            if (soundBtn) {
+                soundBtn.innerHTML = state.soundEnabled ? '<i class=\"fa-solid fa-volume-high\"></i>' : '<i class=\"fa-solid fa-volume-xmark\"></i>';
+                soundBtn.classList.toggle('text-slate-400', !state.soundEnabled);
+                soundBtn.classList.toggle('text-slate-600', state.soundEnabled);
+            }
+        }
+
+        function showPracticeHint() {
+            const feedback = document.getElementById('gugudanPracticeFeedback');
+            if (!feedback) return;
+            state.hintUsed = true;
+            const answer = state.practiceCurrentAnswer;
+            feedback.className = 'font-jua text-xl text-indigo-700 bg-indigo-50 p-3 rounded-2xl border border-indigo-200';
+            feedback.innerText = `💡 힌트: 같은 수를 여러 번 더해 보세요. 정답은 ${answer}이에요.`;
+            speakText(`힌트예요. 같은 수를 여러 번 더해 보세요. 정답은 ${answer}예요.`);
+        }
+
+        function resetProgress() {
+            if (!confirm('별, 레벨, 학습 기록을 모두 지울까요?')) return;
+            localStorage.removeItem('multiplicationPlaygroundProgress');
+            location.reload();
+        }
+
+        function addStars(num) {
+            state.stars += num;
+            document.getElementById('userStars').innerText = state.stars;
+            
+            // Level logic
+            const newLevel = Math.floor(state.stars / 20) + 1;
+            if (newLevel !== state.level) {
+                state.level = newLevel;
+                document.getElementById('userLevel').innerText = state.level;
+            }
+
+            // Sticker logic
+            state.stickers = Math.min(20, Math.floor(state.stars / 5));
+            renderStickers();
+            saveProgress();
+        }
+
+        function renderStickers() {
+            const grid = document.getElementById('stickerGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            for (let i = 1; i <= 20; i++) {
+                const slot = document.createElement('div');
+                if (i <= state.stickers) {
+                    slot.className = 'h-14 bg-gradient-to-br from-amber-300 to-yellow-400 rounded-2xl flex items-center justify-center text-2xl shadow-md border-2 border-amber-200 animate-bounce';
+                    slot.innerHTML = '⭐';
+                    slot.title = `${i}번째 칭찬 스티커`;
+                } else {
+                    slot.className = 'h-14 bg-slate-100/80 rounded-2xl flex items-center justify-center text-slate-300 border-2 border-dashed border-slate-200';
+                    slot.innerText = i;
+                }
+                grid.appendChild(slot);
+            }
+
+            document.getElementById('stickerCount').innerText = `${state.stickers} / 20`;
+        }
+
+        function celebrateAchievement() {
+            window.print();
+        }
+
+        function openConceptModal() {
+            document.getElementById('conceptModal').classList.remove('hidden');
+        }
+
+        function closeConceptModal() {
+            document.getElementById('conceptModal').classList.add('hidden');
+        }
+
+        function alertModal(title, message) {
+            const div = document.createElement('div');
+            div.className = 'fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4';
+            div.innerHTML = `
+                <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl border-4 border-yellow-300 animate-fade-in">
+                    <h3 class="font-jua text-2xl text-slate-800">${title}</h3>
+                    <p class="text-slate-600 text-sm whitespace-pre-line">${message}</p>
+                    <button onclick="this.parentElement.parentElement.remove()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-jua text-lg px-6 py-2 rounded-2xl shadow bouncy">확인</button>
+                </div>
+            `;
+            document.body.appendChild(div);
+        }
+
+        window.onload = function() {
+            loadProgress();
+            switchGugudanSubTab('concept');
+            setVerticalMode('2x1_no_carry');
+            renderStickers();
+            updateProgressUI();
+            initScratchCanvas();
+            
+            // Set current date on certificate
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일`;
+            const certEl = document.getElementById('certDate');
+            if (certEl) certEl.innerText = dateStr;
+        };
+
+        /* Interactive Pen Scratchpad Canvas Functions */
+        let scratchCanvas, scratchCtx;
+        let isDrawingScratch = false;
+        let scratchTool = 'pen';
+        let scratchColor = '#1e293b';
+        let scratchInitialized = false;
+
+        function initScratchCanvas() {
+            scratchCanvas = document.getElementById('scratchCanvas');
+            if (!scratchCanvas) return;
+
+            scratchCtx = scratchCanvas.getContext('2d');
+
+            // 이미 이벤트가 연결되어 있으면 크기만 다시 맞춤
+            if (scratchInitialized) {
+                resizeScratchCanvas();
+                return;
+            }
+
+            scratchCanvas.style.touchAction = 'none';
+
+            const getPos = (e) => {
+                const rect = scratchCanvas.getBoundingClientRect();
+                return {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                };
+            };
+
+            const startDraw = (e) => {
+                if (e.pointerType === 'mouse' && e.button !== 0) return;
+                e.preventDefault();
+
+                // 캔버스가 처음 보일 때 실제 크기를 확보
+                resizeScratchCanvas();
+
+                isDrawingScratch = true;
+                scratchCanvas.setPointerCapture?.(e.pointerId);
+
+                const pos = getPos(e);
+                scratchCtx.beginPath();
+                scratchCtx.moveTo(pos.x, pos.y);
+            };
+
+            const draw = (e) => {
+                if (!isDrawingScratch) return;
+                e.preventDefault();
+
+                const pos = getPos(e);
+
+                scratchCtx.globalCompositeOperation =
+                    scratchTool === 'eraser' ? 'destination-out' : 'source-over';
+
+                if (scratchTool === 'eraser') {
+                    scratchCtx.lineWidth = 20;
+                } else {
+                    scratchCtx.strokeStyle = scratchColor;
+                    scratchCtx.lineWidth = 3;
+                }
+
+                scratchCtx.lineCap = 'round';
+                scratchCtx.lineJoin = 'round';
+                scratchCtx.lineTo(pos.x, pos.y);
+                scratchCtx.stroke();
+            };
+
+            const stopDraw = (e) => {
+                if (!isDrawingScratch) return;
+                e?.preventDefault?.();
+                scratchCtx.closePath();
+                isDrawingScratch = false;
+
+                if (e?.pointerId != null) {
+                    try { scratchCanvas.releasePointerCapture?.(e.pointerId); } catch (_) {}
+                }
+            };
+
+            scratchCanvas.addEventListener('pointerdown', startDraw);
+            scratchCanvas.addEventListener('pointermove', draw);
+            scratchCanvas.addEventListener('pointerup', stopDraw);
+            scratchCanvas.addEventListener('pointercancel', stopDraw);
+            scratchCanvas.addEventListener('pointerleave', (e) => {
+                // 펜/터치가 캔버스 밖으로 나가도 캡처된 포인터는 계속 그림
+                if (e.pointerType === 'mouse') stopDraw(e);
+            });
+
+            window.addEventListener('resize', () => {
+                if (document.getElementById('section-vertical')?.classList.contains('hidden')) return;
+                resizeScratchCanvas();
+            });
+
+            scratchInitialized = true;
+            resizeScratchCanvas();
+        }
+
+        function resizeScratchCanvas() {
+            if (!scratchCanvas || !scratchCtx) return;
+
+            const rect = scratchCanvas.getBoundingClientRect();
+            if (rect.width < 10 || rect.height < 10) return;
+
+            const dpr = Math.max(1, window.devicePixelRatio || 1);
+
+            // 기존 그림을 CSS 픽셀 기준 임시 캔버스에 보존
+            const oldWidth = scratchCanvas.width;
+            const oldHeight = scratchCanvas.height;
+            const oldCanvas = document.createElement('canvas');
+
+            if (oldWidth > 0 && oldHeight > 0) {
+                oldCanvas.width = oldWidth;
+                oldCanvas.height = oldHeight;
+                const oldCtx = oldCanvas.getContext('2d');
+                oldCtx.drawImage(scratchCanvas, 0, 0);
+            }
+
+            scratchCanvas.width = Math.round(rect.width * dpr);
+            scratchCanvas.height = Math.round(rect.height * dpr);
+            scratchCanvas.style.width = `${rect.width}px`;
+            scratchCanvas.style.height = `${rect.height}px`;
+
+            scratchCtx = scratchCanvas.getContext('2d');
+            scratchCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            scratchCtx.lineCap = 'round';
+            scratchCtx.lineJoin = 'round';
+
+            // 이전 그림 복원
+            if (oldCanvas.width > 0 && oldCanvas.height > 0) {
+                scratchCtx.drawImage(
+                    oldCanvas,
+                    0, 0, oldCanvas.width, oldCanvas.height,
+                    0, 0, rect.width, rect.height
+                );
+            }
+
+            scratchCtx.globalCompositeOperation = 'source-over';
+            scratchCtx.strokeStyle = scratchColor;
+        }
+
+        function setScratchTool(tool, color, btnEl) {
+            scratchTool = tool;
+            if (color) scratchColor = color;
+
+            const colorBtns = document.querySelectorAll('.scratch-color-btn');
+            colorBtns.forEach(btn => {
+                btn.classList.remove('border-indigo-500');
+                btn.classList.add('border-transparent');
+            });
+
+            const eraserBtn = document.getElementById('scratchEraserBtn');
+            if (eraserBtn) {
+                eraserBtn.classList.remove('bg-indigo-600', 'text-white');
+                eraserBtn.classList.add('bg-indigo-100', 'text-indigo-800');
+            }
+
+            if (tool === 'pen' && btnEl) {
+                btnEl.classList.remove('border-transparent');
+                btnEl.classList.add('border-indigo-500');
+            } else if (tool === 'eraser' && eraserBtn) {
+                eraserBtn.classList.remove('bg-indigo-100', 'text-indigo-800');
+                eraserBtn.classList.add('bg-indigo-600', 'text-white');
+            }
+        }
+
+        function clearScratchCanvas() {
+            if (scratchCanvas && scratchCtx) {
+                scratchCtx.save();
+                scratchCtx.setTransform(1, 0, 0, 1, 0, 0);
+                scratchCtx.clearRect(0, 0, scratchCanvas.width, scratchCanvas.height);
+                scratchCtx.restore();
+
+                const dpr = Math.max(1, window.devicePixelRatio || 1);
+                scratchCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                scratchCtx.globalCompositeOperation = 'source-over';
+                scratchCtx.strokeStyle = scratchColor;
+            }
+        }
+    </script>
+</body>
+</html>
